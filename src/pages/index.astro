@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="Pratiksha Rao - coming soon." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pratiksha Rao</title>
+  </head>
+  <body>
+    <main class="page">
+      <section class="intro" aria-labelledby="site-title">
+        <p class="kicker">Coming soon</p>
+        <h1 id="site-title">Pratiksha Rao</h1>
+        <p class="subtitle">
+          A personal room for reading, writing, music, work, and small beautiful
+          things.
+        </p>
+        <p class="status">Coming soon.</p>
+      </section>
+
+      <section class="room" aria-label="A small placeholder sketch of the future room concept">
+        <div class="shelf" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+        <div class="desk" aria-hidden="true">
+          <div class="typewriter"></div>
+          <div class="laptop"></div>
+          <div class="gramophone"></div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
+
+<style>
+  :global(*) {
+    box-sizing: border-box;
+  }
+
+  :global(html) {
+    background: #f8f2e8;
+    color: #2f2a24;
+    font-family:
+      "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    min-height: 100%;
+  }
+
+  :global(body) {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  :global(body::before) {
+    background:
+      radial-gradient(circle at 24% 18%, rgba(150, 76, 45, 0.14), transparent 26rem),
+      linear-gradient(135deg, rgba(95, 113, 92, 0.1), transparent 38%),
+      linear-gradient(180deg, #fbf6ee 0%, #f5eadb 100%);
+    content: "";
+    inset: 0;
+    position: fixed;
+    z-index: -2;
+  }
+
+  :global(body::after) {
+    background-image: radial-gradient(rgba(47, 42, 36, 0.12) 0.6px, transparent 0.6px);
+    background-size: 18px 18px;
+    content: "";
+    inset: 0;
+    opacity: 0.22;
+    pointer-events: none;
+    position: fixed;
+    z-index: -1;
+  }
+
+  .page {
+    align-items: center;
+    display: grid;
+    gap: clamp(2rem, 6vw, 5rem);
+    grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.95fr);
+    min-height: 100svh;
+    padding: clamp(2rem, 6vw, 6rem);
+  }
+
+  .intro {
+    max-width: 42rem;
+  }
+
+  .kicker,
+  .status {
+    color: #786a5c;
+    font-family:
+      Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+      sans-serif;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+
+  .kicker {
+    font-size: 0.75rem;
+    margin: 0 0 1.25rem;
+  }
+
+  h1 {
+    color: #2f2a24;
+    font-size: 7.5rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 0.92;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .subtitle {
+    color: #50483e;
+    font-size: 1.4rem;
+    line-height: 1.65;
+    margin: clamp(1.5rem, 4vw, 2.5rem) 0 0;
+    max-width: 36rem;
+  }
+
+  .status {
+    align-items: center;
+    display: flex;
+    font-size: 0.78rem;
+    gap: 0.8rem;
+    margin: 2rem 0 0;
+  }
+
+  .status::before {
+    background: #9b5b3a;
+    content: "";
+    display: block;
+    height: 1px;
+    width: 3rem;
+  }
+
+  .room {
+    aspect-ratio: 4 / 5;
+    border: 1px solid rgba(64, 55, 47, 0.24);
+    display: grid;
+    grid-template-rows: 1fr auto;
+    isolation: isolate;
+    min-height: 24rem;
+    overflow: hidden;
+    padding: clamp(1.25rem, 3vw, 2rem);
+    position: relative;
+  }
+
+  .room::before {
+    background:
+      linear-gradient(90deg, rgba(66, 75, 82, 0.16) 1px, transparent 1px),
+      linear-gradient(rgba(66, 75, 82, 0.12) 1px, transparent 1px);
+    background-size: 5.5rem 5.5rem;
+    content: "";
+    inset: 0;
+    opacity: 0.24;
+    position: absolute;
+    z-index: -1;
+  }
+
+  .room::after {
+    background: rgba(255, 252, 246, 0.44);
+    border-left: 1px solid rgba(47, 42, 36, 0.18);
+    content: "";
+    height: 100%;
+    position: absolute;
+    right: 18%;
+    top: 0;
+    transform: skewX(-11deg);
+    transform-origin: top;
+    width: 36%;
+    z-index: -1;
+  }
+
+  .shelf {
+    align-items: end;
+    align-self: start;
+    border-bottom: 2px solid #8b664f;
+    display: flex;
+    gap: 0.35rem;
+    height: 7rem;
+    padding: 0 0.75rem 0.7rem;
+    width: min(68%, 18rem);
+  }
+
+  .shelf span {
+    background: #5f715c;
+    border-radius: 1px 1px 0 0;
+    display: block;
+    width: 0.8rem;
+  }
+
+  .shelf span:nth-child(2) {
+    background: #9b5b3a;
+    height: 4.2rem;
+  }
+
+  .shelf span:nth-child(3) {
+    background: #d7b77e;
+    height: 3.4rem;
+  }
+
+  .shelf span:nth-child(4) {
+    background: #5a6670;
+    height: 4.8rem;
+  }
+
+  .shelf span:nth-child(5) {
+    background: #7f7468;
+    height: 3.8rem;
+  }
+
+  .shelf span:nth-child(1) {
+    height: 5rem;
+  }
+
+  .desk {
+    align-self: end;
+    border-bottom: 4px solid #745643;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    min-height: 12rem;
+    position: relative;
+  }
+
+  .desk::before,
+  .desk::after {
+    background: #745643;
+    bottom: -4.5rem;
+    content: "";
+    height: 4.5rem;
+    position: absolute;
+    width: 3px;
+  }
+
+  .desk::before {
+    left: 8%;
+  }
+
+  .desk::after {
+    right: 8%;
+  }
+
+  .typewriter {
+    align-self: end;
+    background: #6f675d;
+    border-radius: 0.35rem 0.35rem 0.1rem 0.1rem;
+    height: 2.6rem;
+    justify-self: start;
+    margin-bottom: 0.6rem;
+    position: relative;
+    width: 5.2rem;
+  }
+
+  .typewriter::before {
+    border: 2px solid #6f675d;
+    border-bottom: 0;
+    border-radius: 0.6rem 0.6rem 0 0;
+    content: "";
+    height: 2.4rem;
+    left: 0.7rem;
+    position: absolute;
+    top: -2.1rem;
+    width: 3.8rem;
+  }
+
+  .typewriter::after {
+    background: repeating-linear-gradient(
+      90deg,
+      #f8f2e8 0 0.22rem,
+      transparent 0.22rem 0.52rem
+    );
+    content: "";
+    height: 0.45rem;
+    left: 0.7rem;
+    position: absolute;
+    top: 1.25rem;
+    width: 3.8rem;
+  }
+
+  .laptop {
+    align-self: end;
+    border: 2px solid #4f5f6c;
+    border-bottom-width: 0.55rem;
+    height: 4.2rem;
+    justify-self: center;
+    margin-bottom: 0.6rem;
+    width: 6.4rem;
+  }
+
+  .gramophone {
+    align-self: end;
+    border-bottom: 2.7rem solid #9b5b3a;
+    border-left: 2rem solid transparent;
+    border-right: 2rem solid transparent;
+    height: 0;
+    justify-self: end;
+    margin-bottom: 3.2rem;
+    position: relative;
+    transform: rotate(-13deg);
+    width: 5.4rem;
+  }
+
+  .gramophone::before {
+    background: #9b5b3a;
+    border-radius: 999px;
+    content: "";
+    height: 0.55rem;
+    left: 0.3rem;
+    position: absolute;
+    top: 2.45rem;
+    transform: rotate(90deg);
+    transform-origin: left center;
+    width: 4rem;
+  }
+
+  @media (max-width: 780px) {
+    .page {
+      align-items: stretch;
+      gap: 2.75rem;
+      grid-template-columns: 1fr;
+      padding: 2rem 1.25rem;
+    }
+
+    h1 {
+      font-size: 5rem;
+    }
+
+    .subtitle {
+      font-size: 1.2rem;
+    }
+
+    .room {
+      aspect-ratio: 5 / 4;
+      min-height: 18rem;
+    }
+  }
+
+  @media (max-width: 460px) {
+    h1 {
+      font-size: 3.5rem;
+    }
+
+    .room {
+      aspect-ratio: auto;
+      min-height: 21rem;
+      padding: 1rem;
+    }
+
+    .desk {
+      grid-template-columns: 1fr 1.1fr 1fr;
+    }
+
+    .typewriter {
+      width: 4.4rem;
+    }
+
+    .laptop {
+      width: 5.2rem;
+    }
+
+    .gramophone {
+      border-left-width: 1.45rem;
+      border-right-width: 1.45rem;
+      width: 4.4rem;
+    }
+  }
+</style>
