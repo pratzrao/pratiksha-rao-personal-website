@@ -1,38 +1,168 @@
+---
+const roomImage = "/images/pratikshas-room-concept-v1.png";
+const comingSoonHotspots = [
+  { id: "reading", label: "Reading", tooltip: "Reading" },
+  { id: "globe", label: "The world" },
+  { id: "piano", label: "Piano" },
+  { id: "crochet", label: "Crochet" },
+  { id: "laptop", label: "Work and resume" },
+  { id: "typewriter", label: "Writing" },
+  { id: "journal", label: "Journal" },
+  { id: "mirror", label: "About" },
+  { id: "plant", label: "The garden" },
+  { id: "television", label: "Watching" },
+  { id: "telephone", label: "Contact" },
+  { id: "paintings", label: "Gallery" },
+];
+---
+
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="description" content="Pratiksha Rao - coming soon." />
+    <meta
+      name="description"
+      content="Pratiksha's Room - a personal place for books, music, words, work, and small beautiful things."
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pratiksha Rao</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&display=swap"
+      rel="stylesheet"
+    />
+    <title>Pratiksha's Room</title>
   </head>
   <body>
-    <main class="page">
-      <section class="intro" aria-labelledby="site-title">
-        <p class="kicker">Coming soon</p>
-        <h1 id="site-title">Pratiksha Rao</h1>
-        <p class="subtitle">
-          A personal room for reading, writing, music, work, and small beautiful
-          things.
-        </p>
-        <p class="status">Coming soon.</p>
-      </section>
+    <main class="room-page">
+      <div class="room-art">
+        <img
+          src={roomImage}
+          alt="An illustrated dark-academia study with a bookcase, writing desk, piano, and cabinet of curiosities."
+        />
+        {
+          comingSoonHotspots.map(({ id, label, tooltip = "Coming soon" }) => (
+            <button
+              class:list={["hotspot", "status-hotspot", `${id}-hotspot`]}
+              type="button"
+              aria-label={`${label}, coming soon`}
+              aria-expanded="false"
+            >
+              <span class="hotspot-marker" aria-hidden="true"></span>
+              <span class="hotspot-tooltip" role="tooltip">{tooltip}</span>
+            </button>
+          ))
+        }
+      </div>
 
-      <section class="room" aria-label="A small placeholder sketch of the future room concept">
-        <div class="shelf" aria-hidden="true">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-        <div class="desk" aria-hidden="true">
-          <div class="typewriter"></div>
-          <div class="laptop"></div>
-          <div class="gramophone"></div>
-        </div>
-      </section>
+      <header class="site-title" aria-labelledby="page-title">
+        <h1 id="page-title">Pratiksha's<br />Room</h1>
+      </header>
     </main>
+
+    <script>
+      const statusHotspots = document.querySelectorAll<HTMLButtonElement>(".status-hotspot");
+      const roomPage = document.querySelector<HTMLElement>(".room-page");
+      const roomArt = document.querySelector<HTMLElement>(".room-art");
+
+      statusHotspots.forEach((hotspot) => {
+        hotspot.addEventListener("click", () => {
+          const isExpanded = hotspot.getAttribute("aria-expanded") === "true";
+
+          statusHotspots.forEach((otherHotspot) => {
+            otherHotspot.setAttribute("aria-expanded", "false");
+          });
+
+          hotspot.setAttribute("aria-expanded", String(!isExpanded));
+        });
+      });
+
+      if (roomPage && roomArt) {
+        const mobileRoom = window.matchMedia("(max-width: 700px)");
+        let panX = 0;
+        let panY = 0;
+        let pointerId: number | null = null;
+        let startX = 0;
+        let startY = 0;
+        let startPanX = 0;
+        let startPanY = 0;
+        let previousMobileMode = mobileRoom.matches;
+
+        const clamp = (value: number, minimum: number, maximum: number) =>
+          Math.min(Math.max(value, minimum), maximum);
+
+        const getBounds = () => ({
+          x: Math.max(0, (roomArt.offsetWidth - roomPage.clientWidth) / 2),
+          y: Math.max(0, (roomArt.offsetHeight - roomPage.clientHeight) / 2),
+        });
+
+        const renderPan = () => {
+          roomArt.style.setProperty("--pan-x", `${panX}px`);
+          roomArt.style.setProperty("--pan-y", `${panY}px`);
+        };
+
+        const setInitialPan = () => {
+          const bounds = getBounds();
+          panX = mobileRoom.matches ? Math.max(-bounds.x, -roomArt.offsetWidth * 0.13) : 0;
+          panY = 0;
+          renderPan();
+        };
+
+        const keepPanInBounds = () => {
+          const bounds = getBounds();
+          panX = clamp(panX, -bounds.x, bounds.x);
+          panY = clamp(panY, -bounds.y, bounds.y);
+          renderPan();
+        };
+
+        requestAnimationFrame(setInitialPan);
+
+        window.addEventListener("resize", () => {
+          if (mobileRoom.matches !== previousMobileMode) {
+            previousMobileMode = mobileRoom.matches;
+            setInitialPan();
+          } else {
+            keepPanInBounds();
+          }
+        });
+
+        roomPage.addEventListener("pointerdown", (event: PointerEvent) => {
+          if (event.target instanceof Element && event.target.closest(".hotspot")) return;
+
+          statusHotspots.forEach((hotspot) => {
+            hotspot.setAttribute("aria-expanded", "false");
+          });
+
+          pointerId = event.pointerId;
+          startX = event.clientX;
+          startY = event.clientY;
+          startPanX = panX;
+          startPanY = panY;
+          roomPage.dataset.dragging = "true";
+          roomPage.setPointerCapture(pointerId);
+        });
+
+        roomPage.addEventListener("pointermove", (event: PointerEvent) => {
+          if (event.pointerId !== pointerId) return;
+
+          const bounds = getBounds();
+          panX = clamp(startPanX + event.clientX - startX, -bounds.x, bounds.x);
+          panY = clamp(startPanY + event.clientY - startY, -bounds.y, bounds.y);
+          renderPan();
+        });
+
+        const stopDragging = (event: PointerEvent) => {
+          if (event.pointerId !== pointerId) return;
+
+          roomPage.releasePointerCapture(pointerId);
+          pointerId = null;
+          delete roomPage.dataset.dragging;
+        };
+
+        roomPage.addEventListener("pointerup", stopDragging);
+        roomPage.addEventListener("pointercancel", stopDragging);
+      }
+    </script>
   </body>
 </html>
 
@@ -42,10 +172,9 @@
   }
 
   :global(html) {
-    background: #f8f2e8;
-    color: #2f2a24;
-    font-family:
-      "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    background: #100e0d;
+    color: #f0e4d0;
+    font-family: Georgia, "Times New Roman", serif;
     min-height: 100%;
   }
 
@@ -54,319 +183,335 @@
     min-height: 100%;
   }
 
-  :global(body::before) {
-    background:
-      radial-gradient(circle at 24% 18%, rgba(150, 76, 45, 0.14), transparent 26rem),
-      linear-gradient(135deg, rgba(95, 113, 92, 0.1), transparent 38%),
-      linear-gradient(180deg, #fbf6ee 0%, #f5eadb 100%);
-    content: "";
-    inset: 0;
-    position: fixed;
-    z-index: -2;
-  }
-
-  :global(body::after) {
-    background-image: radial-gradient(rgba(47, 42, 36, 0.12) 0.6px, transparent 0.6px);
-    background-size: 18px 18px;
-    content: "";
-    inset: 0;
-    opacity: 0.22;
-    pointer-events: none;
-    position: fixed;
-    z-index: -1;
-  }
-
-  .page {
-    align-items: center;
-    display: grid;
-    gap: clamp(2rem, 6vw, 5rem);
-    grid-template-columns: minmax(0, 1.05fr) minmax(18rem, 0.95fr);
+  .room-page {
+    background: #100e0d;
+    isolation: isolate;
     min-height: 100svh;
-    padding: clamp(2rem, 6vw, 6rem);
+    overflow: hidden;
+    position: relative;
+    touch-action: none;
   }
 
-  .intro {
-    max-width: 42rem;
+  .room-page::after {
+    background:
+      linear-gradient(90deg, rgba(9, 8, 8, 0.76) 0%, rgba(9, 8, 8, 0.42) 24%, transparent 47%),
+      linear-gradient(180deg, rgba(8, 7, 7, 0.42) 0%, transparent 34%);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 1;
   }
 
-  .kicker,
-  .status {
-    color: #786a5c;
-    font-family:
-      Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-      sans-serif;
+  .room-art {
+    --pan-x: 0px;
+    --pan-y: 0px;
+    aspect-ratio: 1672 / 941;
+    cursor: grab;
+    height: auto;
+    left: 50%;
+    min-width: 100vw;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%) translate(var(--pan-x), var(--pan-y));
+    transition: transform 260ms ease-out;
+    user-select: none;
+    width: 177.68svh;
+  }
+
+  .room-art > img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    width: 100%;
+  }
+
+  .site-title {
+    left: clamp(1.4rem, 4vw, 4.5rem);
+    max-width: 24rem;
+    pointer-events: none;
+    position: absolute;
+    top: clamp(1.4rem, 4vw, 4.25rem);
+    z-index: 2;
+  }
+
+  h1,
+  .hotspot-tooltip {
+    font-family: "Cormorant Garamond", Garamond, Georgia, serif;
     letter-spacing: 0;
-    text-transform: uppercase;
-  }
-
-  .kicker {
-    font-size: 0.75rem;
-    margin: 0 0 1.25rem;
   }
 
   h1 {
-    color: #2f2a24;
-    font-size: 7.5rem;
-    font-weight: 400;
-    letter-spacing: 0;
-    line-height: 0.92;
+    color: #f0e4d0;
+    font-size: 5.5rem;
+    font-weight: 600;
+    line-height: 0.82;
     margin: 0;
-    text-wrap: balance;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.72);
   }
 
-  .subtitle {
-    color: #50483e;
-    font-size: 1.4rem;
-    line-height: 1.65;
-    margin: clamp(1.5rem, 4vw, 2.5rem) 0 0;
-    max-width: 36rem;
-  }
-
-  .status {
-    align-items: center;
-    display: flex;
-    font-size: 0.78rem;
-    gap: 0.8rem;
-    margin: 2rem 0 0;
-  }
-
-  .status::before {
-    background: #9b5b3a;
-    content: "";
-    display: block;
-    height: 1px;
-    width: 3rem;
-  }
-
-  .room {
-    aspect-ratio: 4 / 5;
-    border: 1px solid rgba(64, 55, 47, 0.24);
-    display: grid;
-    grid-template-rows: 1fr auto;
-    isolation: isolate;
-    min-height: 24rem;
-    overflow: hidden;
-    padding: clamp(1.25rem, 3vw, 2rem);
-    position: relative;
-  }
-
-  .room::before {
-    background:
-      linear-gradient(90deg, rgba(66, 75, 82, 0.16) 1px, transparent 1px),
-      linear-gradient(rgba(66, 75, 82, 0.12) 1px, transparent 1px);
-    background-size: 5.5rem 5.5rem;
-    content: "";
-    inset: 0;
-    opacity: 0.24;
+  .hotspot {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    padding: 0;
     position: absolute;
-    z-index: -1;
+    z-index: 1;
   }
 
-  .room::after {
-    background: rgba(255, 252, 246, 0.44);
-    border-left: 1px solid rgba(47, 42, 36, 0.18);
+  .reading-hotspot {
+    --marker-x: 51%;
+    --marker-y: 52%;
+    height: 58%;
+    left: 59.5%;
+    top: 6%;
+    width: 16.7%;
+  }
+
+  .globe-hotspot {
+    --marker-x: 47%;
+    --marker-y: 46%;
+    height: 18%;
+    left: 46%;
+    top: 39%;
+    width: 10%;
+  }
+
+  .piano-hotspot {
+    --marker-x: 45%;
+    --marker-y: 57%;
+    height: 32%;
+    left: 26%;
+    top: 27%;
+    width: 18%;
+  }
+
+  .crochet-hotspot {
+    --marker-x: 22%;
+    --marker-y: 49%;
+    height: 16%;
+    left: 15%;
+    top: 73%;
+    width: 13%;
+  }
+
+  .laptop-hotspot {
+    --marker-x: 45%;
+    --marker-y: 47%;
+    height: 15%;
+    left: 62%;
+    top: 55%;
+    width: 11%;
+    z-index: 2;
+  }
+
+  .typewriter-hotspot {
+    --marker-x: 47%;
+    --marker-y: 64%;
+    height: 18%;
+    left: 44%;
+    top: 49%;
+    width: 12%;
+  }
+
+  .journal-hotspot {
+    --marker-x: 48%;
+    --marker-y: 49%;
+    height: 12%;
+    left: var(--marker-x, 52%);
+    top: 61%;
+    width: 10%;
+  }
+
+  .mirror-hotspot {
+    --marker-x: 37%;
+    --marker-y: 54%;
+    height: 51%;
+    left: 3%;
+    top: 29%;
+    width: 9%;
+  }
+
+  .plant-hotspot {
+    --marker-x: 40%;
+    --marker-y: 55%;
+    height: 24%;
+    left: 10%;
+    top: 34%;
+    width: 10%;
+  }
+
+  .television-hotspot {
+    --marker-x: 50%;
+    --marker-y: 57%;
+    height: 19%;
+    left: 86%;
+    top: 37%;
+    width: 13%;
+  }
+
+  .telephone-hotspot {
+    --marker-x: 48%;
+    --marker-y: 67%;
+    height: 15%;
+    left: 71%;
+    top: 58%;
+    width: 12%;
+    z-index: 2;
+  }
+
+  .paintings-hotspot {
+    --marker-x: 49%;
+    --marker-y: 55%;
+    height: 17%;
+    left: 30%;
+    top: 16%;
+    width: 13%;
+  }
+
+  .hotspot::before {
+    background: radial-gradient(ellipse at center, rgba(224, 181, 91, 0.2), rgba(224, 181, 91, 0.05) 46%, transparent 72%);
     content: "";
-    height: 100%;
+    inset: -6%;
+    opacity: 0;
+    pointer-events: none;
     position: absolute;
-    right: 18%;
-    top: 0;
-    transform: skewX(-11deg);
-    transform-origin: top;
-    width: 36%;
-    z-index: -1;
+    transition: opacity 180ms ease;
   }
 
-  .shelf {
-    align-items: end;
-    align-self: start;
-    border-bottom: 2px solid #8b664f;
-    display: flex;
-    gap: 0.35rem;
-    height: 7rem;
-    padding: 0 0.75rem 0.7rem;
-    width: min(68%, 18rem);
+  .hotspot-marker {
+    background: #d7aa56;
+    border: 1px solid rgba(255, 235, 191, 0.92);
+    border-radius: 50%;
+    box-shadow: 0 0 0 5px rgba(215, 170, 86, 0.13), 0 0 16px rgba(231, 181, 77, 0.82);
+    height: 0.7rem;
+    left: 52%;
+    position: absolute;
+    top: var(--marker-y, 47%);
+    transform: translate(-50%, -50%);
+    transition: box-shadow 180ms ease, transform 180ms ease;
+    width: 0.7rem;
   }
 
-  .shelf span {
-    background: #5f715c;
-    border-radius: 1px 1px 0 0;
-    display: block;
-    width: 0.8rem;
-  }
-
-  .shelf span:nth-child(2) {
-    background: #9b5b3a;
-    height: 4.2rem;
-  }
-
-  .shelf span:nth-child(3) {
-    background: #d7b77e;
-    height: 3.4rem;
-  }
-
-  .shelf span:nth-child(4) {
-    background: #5a6670;
-    height: 4.8rem;
-  }
-
-  .shelf span:nth-child(5) {
-    background: #7f7468;
-    height: 3.8rem;
-  }
-
-  .shelf span:nth-child(1) {
-    height: 5rem;
-  }
-
-  .desk {
-    align-self: end;
-    border-bottom: 4px solid #745643;
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    min-height: 12rem;
-    position: relative;
-  }
-
-  .desk::before,
-  .desk::after {
-    background: #745643;
-    bottom: -4.5rem;
+  .hotspot-marker::after {
+    border: 1px solid rgba(235, 197, 113, 0.58);
+    border-radius: 50%;
     content: "";
-    height: 4.5rem;
+    inset: -0.34rem;
     position: absolute;
-    width: 3px;
   }
 
-  .desk::before {
-    left: 8%;
-  }
-
-  .desk::after {
-    right: 8%;
-  }
-
-  .typewriter {
-    align-self: end;
-    background: #6f675d;
-    border-radius: 0.35rem 0.35rem 0.1rem 0.1rem;
-    height: 2.6rem;
-    justify-self: start;
-    margin-bottom: 0.6rem;
-    position: relative;
-    width: 5.2rem;
-  }
-
-  .typewriter::before {
-    border: 2px solid #6f675d;
-    border-bottom: 0;
-    border-radius: 0.6rem 0.6rem 0 0;
-    content: "";
-    height: 2.4rem;
-    left: 0.7rem;
+  .hotspot-tooltip {
+    background: rgba(20, 16, 13, 0.9);
+    border: 1px solid rgba(215, 170, 86, 0.62);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.32);
+    color: #f5e4c6;
+    font-size: 1.5rem;
+    font-style: italic;
+    font-weight: 600;
+    left: var(--marker-x, 52%);
+    line-height: 1;
+    opacity: 0;
+    padding: 0.62rem 0.95rem 0.68rem;
+    pointer-events: none;
     position: absolute;
-    top: -2.1rem;
-    width: 3.8rem;
+    top: var(--marker-y, 47%);
+    transform: translate(-50%, calc(-100% - 1rem)) translateY(0.3rem);
+    transition: opacity 180ms ease, transform 180ms ease;
+    white-space: nowrap;
   }
 
-  .typewriter::after {
-    background: repeating-linear-gradient(
-      90deg,
-      #f8f2e8 0 0.22rem,
-      transparent 0.22rem 0.52rem
-    );
-    content: "";
-    height: 0.45rem;
-    left: 0.7rem;
-    position: absolute;
-    top: 1.25rem;
-    width: 3.8rem;
+  .hotspot:hover::before,
+  .hotspot:focus-visible::before,
+  .hotspot[aria-expanded="true"]::before {
+    opacity: 1;
   }
 
-  .laptop {
-    align-self: end;
-    border: 2px solid #4f5f6c;
-    border-bottom-width: 0.55rem;
-    height: 4.2rem;
-    justify-self: center;
-    margin-bottom: 0.6rem;
-    width: 6.4rem;
+  .hotspot:hover .hotspot-marker,
+  .hotspot:focus-visible .hotspot-marker,
+  .hotspot[aria-expanded="true"] .hotspot-marker {
+    box-shadow: 0 0 0 8px rgba(215, 170, 86, 0.2), 0 0 23px rgba(242, 197, 101, 0.95);
+    transform: translate(-50%, -50%) scale(1.18);
   }
 
-  .gramophone {
-    align-self: end;
-    border-bottom: 2.7rem solid #9b5b3a;
-    border-left: 2rem solid transparent;
-    border-right: 2rem solid transparent;
-    height: 0;
-    justify-self: end;
-    margin-bottom: 3.2rem;
-    position: relative;
-    transform: rotate(-13deg);
-    width: 5.4rem;
+  .hotspot:hover .hotspot-tooltip,
+  .hotspot:focus-visible .hotspot-tooltip,
+  .hotspot[aria-expanded="true"] .hotspot-tooltip {
+    opacity: 1;
+    transform: translate(-50%, calc(-100% - 1rem));
   }
 
-  .gramophone::before {
-    background: #9b5b3a;
-    border-radius: 999px;
-    content: "";
-    height: 0.55rem;
-    left: 0.3rem;
-    position: absolute;
-    top: 2.45rem;
-    transform: rotate(90deg);
-    transform-origin: left center;
-    width: 4rem;
+  .hotspot:focus-visible {
+    outline: 2px solid #f5dfad;
+    outline-offset: 4px;
   }
 
-  @media (max-width: 780px) {
-    .page {
-      align-items: stretch;
-      gap: 2.75rem;
-      grid-template-columns: 1fr;
-      padding: 2rem 1.25rem;
+  .room-page[data-dragging="true"] .room-art {
+    cursor: grabbing;
+    transition: none;
+  }
+
+  @media (max-width: 1000px) {
+    .site-title {
+      max-width: 18rem;
     }
 
     h1 {
-      font-size: 5rem;
-    }
-
-    .subtitle {
-      font-size: 1.2rem;
-    }
-
-    .room {
-      aspect-ratio: 5 / 4;
-      min-height: 18rem;
+      font-size: 4.5rem;
     }
   }
 
-  @media (max-width: 460px) {
+  @media (max-width: 700px) {
+
+    .site-title {
+      max-width: 11rem;
+      top: 1.25rem;
+    }
+
     h1 {
-      font-size: 3.5rem;
+      font-size: 3.4rem;
     }
 
-    .room {
-      aspect-ratio: auto;
-      min-height: 21rem;
-      padding: 1rem;
+    .reading-hotspot {
+      height: 63%;
+      left: 59%;
+      top: 4%;
+      width: 18%;
     }
 
-    .desk {
-      grid-template-columns: 1fr 1.1fr 1fr;
+    .hotspot-tooltip {
+      font-size: 1.25rem;
+    }
+  }
+
+  @media (max-width: 430px) {
+    .site-title {
+      left: 1.2rem;
+      max-width: 9rem;
     }
 
-    .typewriter {
-      width: 4.4rem;
+    h1 {
+      font-size: 2.8rem;
+    }
+  }
+
+  @media (max-height: 700px) and (min-width: 701px) {
+    .site-title {
+      top: 1.8rem;
     }
 
-    .laptop {
-      width: 5.2rem;
+    h1 {
+      font-size: 4.5rem;
     }
+  }
 
-    .gramophone {
-      border-left-width: 1.45rem;
-      border-right-width: 1.45rem;
-      width: 4.4rem;
+  @media (prefers-reduced-motion: reduce) {
+    .hotspot::before,
+    .hotspot-marker,
+    .hotspot-tooltip {
+      transition: none;
     }
   }
 </style>
