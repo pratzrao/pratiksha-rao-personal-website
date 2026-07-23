@@ -1,0 +1,48 @@
+---
+import { demoReviews } from "../../../data/reading-demo";
+
+export function getStaticPaths() {
+  return demoReviews.map((review) => ({ params: { slug: review.slug }, props: { review } }));
+}
+
+const { review } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&display=swap" rel="stylesheet" />
+    <title>{review.title} | Reading | Pratiksha's Room</title>
+  </head>
+  <body>
+    <main>
+      <nav><a href="/reading/">Back to the bookshelf</a></nav>
+      <p class="eyebrow">Notes in the margins</p>
+      <h1>{review.title}</h1>
+      <p class="author">{review.author}</p>
+      <div class="rule" aria-hidden="true"></div>
+      <p class="note">{review.note}</p>
+      <p class="draft">This is a demonstration review page for the bookshelf prototype. The final shelf can use this same route for your real notes.</p>
+    </main>
+  </body>
+</html>
+
+<style>
+  :global(*) { box-sizing: border-box; }
+  :global(html) { background: #100e0d; color: #f0e3ce; font-family: "Cormorant Garamond", Garamond, Georgia, serif; }
+  :global(body) { margin: 0; }
+  main { margin: 0 auto; max-width: 48rem; min-height: 100svh; padding: 1.8rem clamp(1.25rem, 6vw, 5rem) 6rem; }
+  nav { font-size: 1.1rem; margin-bottom: clamp(5rem, 13vw, 9rem); }
+  nav a { border-bottom: 1px solid rgba(225, 190, 123, 0.55); color: #ddbd81; text-decoration: none; }
+  .eyebrow { color: #c99f61; font-size: 1.15rem; font-style: italic; margin: 0 0 0.7rem; }
+  h1 { font-size: clamp(3.4rem, 8vw, 6.8rem); font-weight: 600; line-height: 0.82; margin: 0 0 1.15rem; }
+  .author { color: #c9b28a; font-size: 1.5rem; margin: 0; }
+  .rule { background: #775132; height: 0.7rem; margin: 3rem 0; position: relative; }
+  .rule::after { background: #d3a35f; content: ""; height: 1px; left: 0.5rem; position: absolute; right: 0.5rem; top: 0.2rem; }
+  .note { font-size: clamp(1.7rem, 3.5vw, 2.35rem); line-height: 1.12; margin-bottom: 2rem; }
+  .draft { border-top: 1px solid rgba(225, 190, 123, 0.25); color: #bfae93; font-size: 1.2rem; line-height: 1.35; padding-top: 1.4rem; }
+</style>

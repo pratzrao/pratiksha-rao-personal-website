@@ -1,5 +1,7 @@
 ---
-const roomImage = "/images/pratikshas-room-concept-v1.png";
+import { readingBooks, readingBuckets } from "../data/reading-demo";
+
+const libraryData = JSON.stringify({ books: readingBooks, buckets: readingBuckets });
 ---
 
 <!doctype html>
@@ -20,230 +22,388 @@ const roomImage = "/images/pratikshas-room-concept-v1.png";
     <title>Reading | Pratiksha's Room</title>
   </head>
   <body>
-    <main class="reading-page">
+    <main class="library-page">
       <nav aria-label="Room navigation">
-        <a href="/">Back to room</a>
+        <a href="/">Return to the room</a>
       </nav>
 
       <header class="page-header">
         <p class="eyebrow">The bookshelf</p>
         <h1>Reading</h1>
-        <p class="lede">Books I am carrying, returning to, and writing beside.</p>
+        <p class="lede">A living shelf of what I have read, what is open now, and what is waiting for its turn.</p>
       </header>
 
-      <figure class="shelf-detail" aria-hidden="true">
-        <img src={roomImage} alt="" />
-      </figure>
+      <section class="current-reading" aria-labelledby="current-title">
+        <div class="section-intro">
+          <p class="eyebrow">Within reach</p>
+          <h2 id="current-title">Currently reading</h2>
+        </div>
+        <div class="current-books" id="current-books"></div>
+      </section>
 
-      <section class="catalogue" aria-labelledby="catalogue-title">
-        <div class="catalogue-heading">
-          <p class="eyebrow">A first shelf</p>
-          <h2 id="catalogue-title">The index is being arranged.</h2>
+      <section class="library" aria-labelledby="library-title">
+        <div class="library-topline">
+          <div>
+            <p class="eyebrow">The collection</p>
+            <h2 id="library-title">Browse the shelves</h2>
+          </div>
+          <p class="collection-count" id="collection-count" aria-live="polite"></p>
         </div>
 
-        <ol class="shelves">
-          <li>
-            <span>01</span>
-            <div>
-              <h3>Current shelf</h3>
-              <p>The books that are open beside the bed, desk, or both.</p>
-            </div>
-          </li>
-          <li>
-            <span>02</span>
-            <div>
-              <h3>Notes in the margins</h3>
-              <p>Small observations, passages worth keeping, and unfinished thoughts.</p>
-            </div>
-          </li>
-          <li>
-            <span>03</span>
-            <div>
-              <h3>Books to return to</h3>
-              <p>A growing record of books that have stayed in the room.</p>
-            </div>
-          </li>
-        </ol>
+        <div class="filters" aria-label="Filter the bookshelf">
+          <label>
+            <span>Collection</span>
+            <select id="bucket-filter" name="collection">
+              {readingBuckets.map((bucket) => <option value={bucket.id}>{bucket.label}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>On the shelf</span>
+            <select id="status-filter" name="status">
+              <option value="all">Everything</option>
+              <option value="reading">Currently reading</option>
+              <option value="read">Read</option>
+              <option value="to-read">To read</option>
+              <option value="favorites">Favorites</option>
+              <option value="contains-notes">Contains notes</option>
+            </select>
+          </label>
+          <label>
+            <span>Genre</span>
+            <select id="genre-filter" name="genre">
+              <option value="all">All genres</option>
+            </select>
+          </label>
+          <label>
+            <span>Sort by</span>
+            <select id="sort-filter" name="sort">
+              <option value="default">Shelf order</option>
+              <option value="recently-finished">Recently finished</option>
+              <option value="earliest-finished">Earliest finished</option>
+              <option value="shortest">Shortest books first</option>
+              <option value="longest">Longest books first</option>
+              <option value="title">Title, A to Z</option>
+              <option value="author">Author, A to Z</option>
+            </select>
+          </label>
+          <p class="key"><span class="review-key" aria-hidden="true"></span> A gold seal means there are notes inside.</p>
+        </div>
+
+        <div class="shelf-stack" id="shelf-stack" aria-live="polite"></div>
+        <p class="empty-state" id="empty-state" hidden>No books are on this shelf yet.</p>
       </section>
     </main>
+
+    <script is:inline id="reading-data" type="application/json" set:html={libraryData}></script>
+    <script>
+      type ReadingStatus = "read" | "reading" | "to-read";
+      type Book = {
+        id: string;
+        title: string;
+        author: string;
+        status: ReadingStatus;
+        genres: string[];
+        buckets: string[];
+        pages: number;
+        favorite?: boolean;
+        hasNotes?: boolean;
+        lastStartedAt?: string;
+        lastFinishedAt?: string;
+        readCount?: number;
+        series?: {
+          name: string;
+          number: number;
+          color: string;
+        };
+        spine: string;
+        reviewSlug?: string;
+      };
+      type Bucket = { id: string; label: string; read: number; total: number };
+      type LibraryData = { books: Book[]; buckets: Bucket[] };
+
+      const dataNode = document.querySelector<HTMLScriptElement>("#reading-data");
+      const shelfStack = document.querySelector<HTMLDivElement>("#shelf-stack");
+      const currentBooks = document.querySelector<HTMLDivElement>("#current-books");
+      const bucketFilter = document.querySelector<HTMLSelectElement>("#bucket-filter");
+      const statusFilter = document.querySelector<HTMLSelectElement>("#status-filter");
+      const genreFilter = document.querySelector<HTMLSelectElement>("#genre-filter");
+      const sortFilter = document.querySelector<HTMLSelectElement>("#sort-filter");
+      const collectionCount = document.querySelector<HTMLParagraphElement>("#collection-count");
+      const emptyState = document.querySelector<HTMLParagraphElement>("#empty-state");
+
+      if (!dataNode || !shelfStack || !currentBooks || !bucketFilter || !statusFilter || !genreFilter || !sortFilter || !collectionCount || !emptyState) {
+        throw new Error("The reading shelf could not be initialized.");
+      }
+
+      const data = JSON.parse(dataNode.textContent || "{}") as LibraryData;
+
+      const escapeHtml = (value: string) => value.replace(/[&<>'"]/g, (character: string) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        "'": "&#039;",
+        '"': "&quot;",
+      } as Record<string, string>)[character]);
+
+      const genres = [...new Set(data.books.flatMap((book: Book) => book.genres))].sort((left, right) => left.localeCompare(right));
+      genreFilter.insertAdjacentHTML("beforeend", genres.map((genre) => `<option value="${escapeHtml(genre)}">${escapeHtml(genre)}</option>`).join(""));
+
+      const bookWidth = (pages: number) => {
+        const width = 2.2 + pages / 175;
+        return Math.min(11, Math.max(2.7, Math.round(width * 100) / 100));
+      };
+
+      const formatDate = (date: string) => new Intl.DateTimeFormat("en", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(`${date}T12:00:00`));
+
+      const bookMarkup = (book: Book) => {
+        const seriesLabel = book.series
+          ? `${book.series.name} ${book.series.number}${book.title === book.series.name ? "" : `, ${book.title}`}`
+          : book.title;
+        const readCount = book.status === "to-read" ? 0 : book.readCount ?? 1;
+        const lastStarted = book.lastStartedAt ? formatDate(book.lastStartedAt) : "Unknown";
+        const lastFinished = book.lastFinishedAt ? formatDate(book.lastFinishedAt) : "Unknown";
+        const details = [
+          `${book.pages} pages`,
+          `Genres: ${book.genres.join(", ")}`,
+          `Reads: ${readCount}`,
+          `Last started: ${lastStarted}`,
+          `Last finished: ${lastFinished}`,
+        ].join("\n");
+        const label = `${seriesLabel} by ${book.author}. ${details.replaceAll("\n", ". ")}`;
+        const metadataRows = [
+          `<span><em>Pages</em><strong>${book.pages}</strong></span>`,
+          `<span><em>Times read</em><strong>${readCount}</strong></span>`,
+          `<span><em>Last started</em><strong>${lastStarted}</strong></span>`,
+          `<span><em>Last finished</em><strong>${lastFinished}</strong></span>`,
+        ].join("");
+        const genreTags = book.genres.map((genre) => `<span>${escapeHtml(genre)}</span>`).join("");
+        const favourite = book.favorite ? '<span class="tooltip-favourite">Favourite</span>' : "";
+        const tooltip = `<span class="book-tooltip" id="book-tooltip-${book.id}" role="tooltip"><span class="tooltip-title">${escapeHtml(seriesLabel)}</span><span class="tooltip-author">${escapeHtml(book.author)}</span>${favourite}<span class="tooltip-rule" aria-hidden="true"></span><span class="tooltip-genres"><em>Genres</em><strong>${genreTags}</strong></span><span class="tooltip-meta">${metadataRows}</span></span>`;
+        const reviewSeal = book.hasNotes ? '<span class="review-seal" aria-hidden="true">✦</span>' : "";
+        const seriesNumber = book.series ? `<span class="series-number" aria-hidden="true">${book.series.number}</span>` : "";
+        const className = `book-spine ${book.status}${book.hasNotes ? " has-notes" : ""}${book.reviewSlug ? " has-review" : ""}${book.series ? " has-series" : ""}`;
+        const contents = `${seriesNumber}<span class="book-title"><span class="book-title-text">${escapeHtml(book.title)}</span></span>${reviewSeal}${tooltip}`;
+        const spine = book.status === "read" && book.series ? book.series.color : book.spine;
+        const style = `--spine: ${spine}; --book-width: ${bookWidth(book.pages)}rem;`;
+
+        if (book.reviewSlug) {
+          return `<a class="${className}" href="/reading/reviews/${book.reviewSlug}/" style="${style}" aria-label="${escapeHtml(label)}" aria-describedby="book-tooltip-${book.id}">${contents}</a>`;
+        }
+
+        return `<div class="${className}" style="${style}" aria-label="${escapeHtml(label)}" aria-describedby="book-tooltip-${book.id}">${contents}</div>`;
+      };
+
+      const renderCurrentBooks = () => {
+        const current = data.books.filter((book: Book) => book.status === "reading");
+        currentBooks.innerHTML = current.map((book) => `
+          <article class="current-book">
+            <span class="current-spine" style="--spine: #5f5d59" aria-hidden="true"></span>
+            <div>
+              <h3>${escapeHtml(book.title)}</h3>
+              <p>${escapeHtml(book.author)}</p>
+            </div>
+          </article>
+        `).join("");
+      };
+
+      const renderShelf = () => {
+        const bucketId = bucketFilter.value;
+        const status = statusFilter.value;
+        const genre = genreFilter.value;
+        const sort = sortFilter.value;
+        const bucket = data.buckets.find((item: Bucket) => item.id === bucketId) || data.buckets[0];
+        const filteredBooks = data.books.filter((book: Book) => {
+          const inBucket = bucketId === "all" || (bucketId === "unfiled" ? book.buckets.length === 0 : book.buckets.includes(bucketId));
+          const hasStatus = status === "all"
+            || book.status === status
+            || (status === "to-read" && book.status === "reading")
+            || (status === "favorites" && book.favorite)
+            || (status === "contains-notes" && book.hasNotes);
+          const hasGenre = genre === "all" || book.genres.includes(genre);
+          return inBucket && hasStatus && hasGenre;
+        });
+
+        const compareBooks = (left: Book, right: Book) => {
+          if (sort === "recently-finished") return (right.lastFinishedAt || "").localeCompare(left.lastFinishedAt || "");
+          if (sort === "earliest-finished") return (left.lastFinishedAt || "9999-12-31").localeCompare(right.lastFinishedAt || "9999-12-31");
+          if (sort === "shortest") return left.pages - right.pages;
+          if (sort === "longest") return right.pages - left.pages;
+          if (sort === "title") return left.title.localeCompare(right.title);
+          if (sort === "author") return left.author.localeCompare(right.author);
+          return 0;
+        };
+        const groups = new Map<string, { books: Book[]; index: number }>();
+
+        filteredBooks.forEach((book, index) => {
+          const key = book.series ? `series:${book.series.name}` : `book:${book.id}`;
+          const group = groups.get(key) || { books: [], index };
+          group.books.push(book);
+          groups.set(key, group);
+        });
+
+        const sortedBooks = [...groups.values()]
+          .map((group) => ({
+            ...group,
+            books: group.books.sort((left, right) => (left.series?.number || 0) - (right.series?.number || 0)),
+          }))
+          .sort((left, right) => sort === "default" ? left.index - right.index : compareBooks(left.books[0], right.books[0]))
+          .flatMap((group) => group.books);
+
+        collectionCount.textContent = `${bucket.read} read / ${bucket.total} in ${bucket.label.toLowerCase()}`;
+        shelfStack.innerHTML = "";
+        emptyState.hidden = sortedBooks.length > 0;
+
+        const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+        const shelfCapacity = window.matchMedia("(max-width: 720px)").matches
+          ? Number.POSITIVE_INFINITY
+          : Math.max(18, shelfStack.getBoundingClientRect().width / rootFontSize - 6.5);
+        const shelves: Book[][] = [];
+        let shelf: Book[] = [];
+        let shelfWidth = 0;
+
+        sortedBooks.forEach((book: Book) => {
+          const requiredWidth = bookWidth(book.pages) + 0.45;
+          if (shelf.length > 0 && shelfWidth + requiredWidth > shelfCapacity) {
+            shelves.push(shelf);
+            shelf = [];
+            shelfWidth = 0;
+          }
+          shelf.push(book);
+          shelfWidth += requiredWidth;
+        });
+
+        if (shelf.length > 0) shelves.push(shelf);
+
+        shelves.forEach((books, index) => {
+          const shelf = document.createElement("section");
+          shelf.className = "shelf-row";
+          shelf.setAttribute("aria-label", `Shelf ${index + 1}`);
+          shelf.innerHTML = `<div class="books">${books.map(bookMarkup).join("")}</div><div class="wood-shelf" aria-hidden="true"></div>`;
+          shelfStack.append(shelf);
+        });
+      };
+
+      renderCurrentBooks();
+      renderShelf();
+      bucketFilter.addEventListener("change", renderShelf);
+      statusFilter.addEventListener("change", renderShelf);
+      genreFilter.addEventListener("change", renderShelf);
+      sortFilter.addEventListener("change", renderShelf);
+      window.addEventListener("resize", renderShelf);
+    </script>
   </body>
 </html>
 
 <style>
-  :global(*) {
-    box-sizing: border-box;
-  }
-
+  :global(*) { box-sizing: border-box; }
   :global(html) {
     background: #100e0d;
-    color: #efe1ca;
+    color: #f0e3ce;
     font-family: "Cormorant Garamond", Garamond, Georgia, serif;
   }
+  :global(body) { margin: 0; }
+  :global(a) { color: inherit; }
 
-  :global(body) {
-    margin: 0;
-  }
-
-  .reading-page {
+  .library-page {
+    background:
+      linear-gradient(90deg, rgba(223, 185, 113, 0.035) 1px, transparent 1px),
+      linear-gradient(rgba(223, 185, 113, 0.025) 1px, transparent 1px),
+      #100e0d;
+    background-size: 22px 22px;
     margin: 0 auto;
-    max-width: 78rem;
-    padding: 1.5rem clamp(1.25rem, 5vw, 4.5rem) 5rem;
+    min-height: 100svh;
+    padding: 1.4rem clamp(1.25rem, 6vw, 6.5rem) 6rem;
   }
 
-  nav {
-    font-size: 1.05rem;
-    padding: 0.4rem 0 4rem;
+  nav { font-size: 1.1rem; padding: 0.4rem 0 clamp(3rem, 8vw, 6.5rem); }
+  nav a { border-bottom: 1px solid rgba(225, 190, 123, 0.55); color: #ddbd81; text-decoration: none; }
+  nav a:hover, nav a:focus-visible { color: #fff0d3; outline: none; }
+
+  .page-header { max-width: 49rem; }
+  .eyebrow { color: #c99f61; font-size: 1.05rem; font-style: italic; margin: 0 0 0.55rem; }
+  h1, h2, h3, p { margin-top: 0; }
+  h1 { font-size: clamp(4.6rem, 10vw, 8.6rem); font-weight: 600; letter-spacing: 0; line-height: 0.72; margin-bottom: 1.75rem; }
+  h2 { font-size: clamp(2.25rem, 4vw, 3.4rem); font-weight: 600; line-height: 0.84; margin: 0; }
+  .lede { color: #d2c0a6; font-size: clamp(1.35rem, 2.3vw, 1.7rem); line-height: 1.3; margin-bottom: clamp(4rem, 9vw, 7rem); max-width: 37rem; }
+
+  .current-reading { border-bottom: 1px solid rgba(225, 190, 123, 0.35); border-top: 1px solid rgba(225, 190, 123, 0.35); display: grid; gap: 2rem; grid-template-columns: minmax(11rem, 0.55fr) minmax(0, 1.45fr); padding: clamp(1.8rem, 4vw, 3rem) 0; }
+  .section-intro h2 { font-size: clamp(2rem, 3vw, 2.75rem); }
+  .current-books { align-items: stretch; display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  :global(.current-book) { align-items: stretch; background: rgba(239, 218, 181, 0.045); border: 1px solid rgba(225, 190, 123, 0.24); display: grid; grid-template-columns: 0.7rem minmax(0, 1fr); min-height: 7rem; padding: 1rem; }
+  :global(.current-spine) { background: var(--spine); box-shadow: inset -4px 0 rgba(0, 0, 0, 0.2); }
+  :global(.current-book div) { align-self: center; padding-left: 0.85rem; }
+  :global(.current-book h3) { font-size: clamp(1.35rem, 2.2vw, 1.75rem); font-weight: 600; line-height: 0.9; margin-bottom: 0.55rem; margin-top: 0; }
+  :global(.current-book p) { color: #c7b594; font-size: 1.05rem; line-height: 1; margin: 0; }
+
+  .library { padding-top: clamp(4rem, 9vw, 7rem); }
+  .library-topline { align-items: end; display: flex; gap: 2rem; justify-content: space-between; margin-bottom: 2rem; }
+  .collection-count { color: #d4b071; font-size: clamp(1.1rem, 2vw, 1.4rem); font-style: italic; line-height: 1; margin: 0; text-align: right; }
+  .filters { align-items: end; border-bottom: 1px solid rgba(225, 190, 123, 0.28); border-top: 1px solid rgba(225, 190, 123, 0.28); display: grid; gap: 1rem 1.8rem; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: clamp(3rem, 6vw, 5rem); padding: 1.1rem 0 1.2rem; }
+  .filters label { display: grid; gap: 0.25rem; }
+  .filters label span { color: #bfa170; font-size: 0.95rem; }
+  select { appearance: none; background: #171311; border: 1px solid rgba(225, 190, 123, 0.45); border-radius: 0; color: #f0e3ce; cursor: pointer; font: 600 1.25rem/1 "Cormorant Garamond", Garamond, Georgia, serif; padding: 0.65rem 2.4rem 0.65rem 0.75rem; background-image: linear-gradient(45deg, transparent 50%, #cfaa6c 50%), linear-gradient(135deg, #cfaa6c 50%, transparent 50%); background-position: calc(100% - 1rem) 52%, calc(100% - 0.7rem) 52%; background-size: 0.32rem 0.32rem, 0.32rem 0.32rem; background-repeat: no-repeat; }
+  select:focus-visible { outline: 2px solid #e3bd77; outline-offset: 2px; }
+  .key { align-self: center; color: #bfae93; font-size: 1rem; grid-column: 2 / -1; line-height: 1.1; margin: 0; }
+  .review-key { background: #e5bd78; border: 1px solid #fff2ce; border-radius: 50%; box-shadow: 0 0 10px rgba(229, 189, 120, 0.4); display: inline-block; height: 0.55rem; margin-right: 0.35rem; width: 0.55rem; }
+
+  :global(.shelf-stack) { display: grid; gap: 0; }
+  :global(.shelf-row) { min-width: 0; padding: 0 clamp(0.8rem, 2.4vw, 2rem); position: relative; }
+  :global(.shelf-row::before), :global(.shelf-row::after) { background: linear-gradient(90deg, #1d100d 0%, #6e4228 33%, #b37a48 47%, #4d2a1b 66%, #180d0a 100%); border: 1px solid rgba(209, 153, 85, 0.35); box-shadow: inset 2px 0 rgba(255, 218, 153, 0.16), inset -3px 0 rgba(0, 0, 0, 0.45); content: ""; height: calc(100% - clamp(0.7rem, 1.4vw, 1.3rem)); position: absolute; top: 0; width: clamp(0.55rem, 1.2vw, 1.1rem); z-index: 2; }
+  :global(.shelf-row::before) { left: 0; }
+  :global(.shelf-row::after) { right: 0; }
+  :global(.books) { align-items: end; background: linear-gradient(90deg, rgba(16, 8, 6, 0.7), rgba(53, 30, 19, 0.36) 12%, rgba(18, 10, 7, 0.15) 50%, rgba(53, 30, 19, 0.36) 88%, rgba(16, 8, 6, 0.7)); border: 1px solid rgba(181, 124, 68, 0.28); box-shadow: inset 0 1rem 1.7rem rgba(0, 0, 0, 0.24), inset 0 -0.8rem 0.9rem rgba(0, 0, 0, 0.28); display: flex; gap: clamp(0.15rem, 0.45vw, 0.45rem); min-height: clamp(14rem, 27vw, 22rem); padding: clamp(1rem, 2vw, 1.8rem) clamp(1.4rem, 3vw, 3.2rem) 0; }
+  :global(.book-spine) { align-items: center; background: var(--spine); border: 1px solid rgba(255, 237, 198, 0.2); box-shadow: inset 4px 0 rgba(255, 235, 197, 0.12), inset -5px 0 rgba(0, 0, 0, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.24); color: #f5e4c6; display: flex; flex: 0 0 var(--book-width); height: clamp(11.5rem, 24vw, 20rem); justify-content: center; min-width: 2.65rem; overflow: visible; padding: 0.55rem 0.18rem 0.75rem; position: relative; text-decoration: none; transition: filter 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+  :global(.book-spine:nth-child(3n)) { height: clamp(12.7rem, 26vw, 21.4rem); }
+  :global(.book-spine:nth-child(4n)) { height: clamp(10.6rem, 22vw, 18rem); }
+  :global(.book-spine.to-read), :global(.book-spine.reading) { background: #5f5d59; color: #d7d3cb; filter: none; opacity: 1; }
+  :global(.book-spine.has-review) { cursor: pointer; }
+  :global(.book-spine.has-review:hover), :global(.book-spine.has-review:focus-visible) { box-shadow: inset 4px 0 rgba(255, 235, 197, 0.2), inset -5px 0 rgba(0, 0, 0, 0.18), 0 0 21px rgba(240, 203, 132, 0.48); filter: brightness(1.14); outline: none; transform: translateY(-0.55rem); }
+  :global(.book-spine:hover), :global(.book-spine:focus-within) { z-index: 5; }
+  :global(.book-title) { display: grid; font-size: clamp(0.9rem, 1.8vw, 1.25rem); font-weight: 600; inset: 0.7rem 0.18rem; letter-spacing: 0.02em; line-height: 0.9; overflow: hidden; place-items: center; position: absolute; }
+  :global(.book-spine.has-notes .book-title) { bottom: 2rem; }
+  :global(.book-spine.has-series .book-title) { top: 2.15rem; }
+  :global(.book-title-text) { display: block; max-height: 100%; overflow: hidden; text-align: center; text-orientation: mixed; writing-mode: vertical-rl; }
+  :global(.series-number) { color: rgba(255, 238, 203, 0.92); font-size: 0.9rem; font-weight: 700; left: 50%; line-height: 1; position: absolute; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65); top: 0.55rem; transform: translateX(-50%); }
+  :global(.review-seal) { align-items: center; background: #e2b96e; border: 1px solid #fff1c8; border-radius: 50%; bottom: 0.4rem; color: #261d15; display: flex; font-family: Georgia, serif; font-size: 0.6rem; height: 1rem; justify-content: center; position: absolute; width: 1rem; }
+  :global(.book-tooltip) { background: #17100d; border: 1px solid rgba(222, 174, 99, 0.82); bottom: calc(100% + 0.9rem); box-shadow: 0 0.75rem 1.8rem rgba(0, 0, 0, 0.52); color: #f5e4c6; display: grid; gap: 0.35rem; left: 50%; max-width: min(19rem, 78vw); min-width: 11.5rem; opacity: 0; padding: 0.85rem 0.95rem 0.8rem; pointer-events: none; position: absolute; transform: translate(-50%, 0.45rem); transition: opacity 160ms ease, transform 160ms ease; visibility: hidden; width: max-content; z-index: 10; }
+  :global(.book-tooltip::after) { border-left: 0.45rem solid transparent; border-right: 0.45rem solid transparent; border-top: 0.5rem solid #17100d; bottom: -0.5rem; content: ""; left: calc(50% - 0.45rem); position: absolute; }
+  :global(.book-spine:hover .book-tooltip), :global(.book-spine:focus-within .book-tooltip) { opacity: 1; transform: translate(-50%, 0); visibility: visible; }
+  :global(.tooltip-title) { font-size: 1.15rem; font-weight: 700; line-height: 0.95; text-align: center; }
+  :global(.tooltip-author) { color: #cdb58c; font-size: 0.93rem; font-style: italic; line-height: 1; text-align: center; }
+  :global(.tooltip-favourite) { background: rgba(194, 147, 71, 0.22); border: 1px solid rgba(229, 189, 120, 0.62); color: #f0ca85; font-size: 0.78rem; justify-self: center; line-height: 1; padding: 0.2rem 0.45rem; text-transform: uppercase; }
+  :global(.tooltip-rule) { border-top: 1px solid rgba(222, 174, 99, 0.44); margin: 0.15rem 0; }
+  :global(.tooltip-genres) { align-items: start; display: grid; gap: 0.45rem; grid-template-columns: auto 1fr; }
+  :global(.tooltip-genres em) { color: #c8a870; font-size: 0.9rem; font-style: normal; line-height: 1.35; }
+  :global(.tooltip-genres strong) { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: flex-end; }
+  :global(.tooltip-genres strong span) { background: rgba(221, 178, 105, 0.13); border: 1px solid rgba(221, 178, 105, 0.35); color: #e7d3ad; font-size: 0.72rem; font-weight: 600; line-height: 1; padding: 0.22rem 0.32rem; }
+  :global(.tooltip-meta) { display: grid; gap: 0.22rem; }
+  :global(.tooltip-meta span) { align-items: baseline; display: flex; font-size: 0.9rem; justify-content: space-between; line-height: 1.05; gap: 1.25rem; }
+  :global(.tooltip-meta em) { color: #c8a870; font-style: normal; }
+  :global(.tooltip-meta strong) { font-weight: 600; text-align: right; }
+  :global(.wood-shelf) { background: linear-gradient(#d09a5f 0 7%, #714222 10% 24%, #a76d3d 27% 34%, #4a2717 38% 76%, #20100b 79% 100%); border: 1px solid rgba(222, 166, 96, 0.4); box-shadow: 0 0.58rem 0.9rem rgba(0, 0, 0, 0.5), inset 0 0.18rem rgba(255, 224, 163, 0.2), inset 0 -0.28rem rgba(0, 0, 0, 0.36); height: clamp(1.35rem, 2.2vw, 2rem); margin: 0 -0.6rem; position: relative; }
+  :global(.wood-shelf::before) { background: linear-gradient(90deg, transparent, rgba(252, 199, 119, 0.38), transparent); content: ""; height: 1px; left: 1rem; position: absolute; right: 1rem; top: 0.47rem; }
+  :global(.wood-shelf::after) { background: #26120c; border: 1px solid rgba(230, 177, 104, 0.3); border-radius: 50%; box-shadow: 0 0 0 0.18rem #3b1d11; content: ""; height: clamp(0.32rem, 0.65vw, 0.55rem); left: 50%; position: absolute; top: 0.8rem; transform: translateX(-50%); width: clamp(0.32rem, 0.65vw, 0.55rem); }
+  .empty-state { color: #c8b89d; font-size: 1.4rem; font-style: italic; }
+
+  @media (max-width: 720px) {
+    .library-page { padding-bottom: 4rem; }
+    .current-reading { grid-template-columns: 1fr; }
+    .library-topline { align-items: start; flex-direction: column; gap: 1rem; }
+    .collection-count { text-align: left; }
+    .filters { grid-template-columns: 1fr 1fr; }
+    .key { grid-column: 2 / -1; }
+    :global(.books) { overflow-x: auto; padding-bottom: 0.3rem; scroll-snap-type: x proximity; }
+    :global(.book-spine) { flex: 0 0 var(--book-width); scroll-snap-align: start; }
   }
 
-  nav a {
-    border-bottom: 1px solid rgba(231, 197, 128, 0.45);
-    color: #ddbd81;
-    text-decoration: none;
-  }
-
-  nav a:hover,
-  nav a:focus-visible {
-    color: #fff0d3;
-  }
-
-  .page-header {
-    max-width: 42rem;
-  }
-
-  .eyebrow {
-    color: #c99f61;
-    font-size: 1.05rem;
-    font-style: italic;
-    margin: 0 0 0.55rem;
-  }
-
-  h1,
-  h2,
-  h3,
-  p {
-    margin-top: 0;
-  }
-
-  h1 {
-    font-size: 5.5rem;
-    font-weight: 600;
-    letter-spacing: 0;
-    line-height: 0.8;
-    margin-bottom: 1.5rem;
-  }
-
-  .lede {
-    color: #d2c0a6;
-    font-size: 1.55rem;
-    line-height: 1.35;
-    margin-bottom: 3rem;
-    max-width: 30rem;
-  }
-
-  .shelf-detail {
-    border-bottom: 1px solid rgba(225, 190, 123, 0.36);
-    border-top: 1px solid rgba(225, 190, 123, 0.36);
-    height: min(33rem, 47svh);
-    margin: 0;
-    overflow: hidden;
-  }
-
-  .shelf-detail img {
-    display: block;
-    height: 100%;
-    object-fit: cover;
-    object-position: 68% 24%;
-    opacity: 0.76;
-    width: 100%;
-  }
-
-  .catalogue {
-    display: grid;
-    gap: 3rem;
-    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
-    padding-top: 4.5rem;
-  }
-
-  .catalogue-heading h2 {
-    font-size: 2.2rem;
-    font-weight: 500;
-    line-height: 1;
-    margin-bottom: 0;
-  }
-
-  .shelves {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-
-  .shelves li {
-    border-top: 1px solid rgba(225, 190, 123, 0.3);
-    display: grid;
-    gap: 1.25rem;
-    grid-template-columns: 2.75rem minmax(0, 1fr);
-    padding: 1.5rem 0 1.65rem;
-  }
-
-  .shelves li:last-child {
-    border-bottom: 1px solid rgba(225, 190, 123, 0.3);
-  }
-
-  .shelves span {
-    color: #bd955d;
-    font-size: 1rem;
-    padding-top: 0.28rem;
-  }
-
-  .shelves h3 {
-    font-size: 2rem;
-    font-weight: 600;
-    line-height: 0.9;
-    margin-bottom: 0.5rem;
-  }
-
-  .shelves p {
-    color: #cbb99e;
-    font-size: 1.22rem;
-    line-height: 1.35;
-    margin-bottom: 0;
-    max-width: 34rem;
-  }
-
-  @media (max-width: 700px) {
-    .reading-page {
-      padding-top: 1.25rem;
-    }
-
-    nav {
-      padding-bottom: 3.2rem;
-    }
-
-    h1 {
-      font-size: 4rem;
-    }
-
-    .lede {
-      font-size: 1.35rem;
-    }
-
-    .shelf-detail {
-      height: 16rem;
-    }
-
-    .catalogue {
-      grid-template-columns: 1fr;
-      padding-top: 3.5rem;
-    }
-  }
-
-  @media (max-width: 420px) {
-    h1 {
-      font-size: 3.4rem;
-    }
-
-    .shelves h3 {
-      font-size: 1.75rem;
-    }
+  @media (max-width: 450px) {
+    h1 { font-size: 4.25rem; }
+    .current-books, .filters { grid-template-columns: 1fr; }
+    .key { grid-column: auto; }
+    :global(.book-title) { font-size: 0.92rem; }
   }
 </style>
