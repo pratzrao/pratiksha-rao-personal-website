@@ -1,18 +1,20 @@
 ---
 const roomImage = "/images/pratikshas-room-concept-v1.png";
-const comingSoonHotspots = [
-  { id: "reading", label: "Reading", tooltip: "Reading" },
-  { id: "globe", label: "The world" },
-  { id: "piano", label: "Piano" },
-  { id: "crochet", label: "Crochet" },
-  { id: "laptop", label: "Work and resume" },
-  { id: "typewriter", label: "Writing" },
-  { id: "journal", label: "Journal" },
-  { id: "mirror", label: "About" },
-  { id: "plant", label: "The garden" },
-  { id: "television", label: "Watching" },
-  { id: "telephone", label: "Contact" },
-  { id: "paintings", label: "Gallery" },
+const roomHotspots = [
+  { id: "reading", label: "Reading", tooltip: "Reading", href: "/reading", x: 68.1, y: 36.2, width: 16.7, height: 58 },
+  { id: "globe", label: "The world", x: 50.7, y: 47.2, width: 10, height: 18 },
+  { id: "piano", label: "Piano", x: 34.1, y: 45.3, width: 18, height: 32 },
+  { id: "crochet", label: "Crochet", x: 17.8, y: 80.9, width: 13, height: 16 },
+  { id: "laptop", label: "Work and resume", x: 66.9, y: 61.9, width: 11, height: 15 },
+  { id: "typewriter", label: "Writing", x: 49.7, y: 60.6, width: 12, height: 18 },
+  { id: "journal", label: "Journal", x: 56.8, y: 66.9, width: 10, height: 12 },
+  { id: "mirror", label: "About", x: 6.3, y: 56.4, width: 9, height: 51 },
+  { id: "plant", label: "The garden", x: 14, y: 47.1, width: 10, height: 24 },
+  { id: "television", label: "Watching", x: 92.4, y: 47.8, width: 13, height: 19 },
+  { id: "telephone", label: "Contact", x: 76.8, y: 68, width: 12, height: 15 },
+  { id: "paintings", label: "Gallery", x: 36.3, y: 25.3, width: 13, height: 17 },
+  { id: "teapot", label: "Tea and cooking", x: 79.4, y: 75.5, width: 12, height: 16 },
+  { id: "camera", label: "Photography", x: 73.7, y: 8.5, width: 8, height: 10 },
 ];
 ---
 
@@ -41,17 +43,30 @@ const comingSoonHotspots = [
           alt="An illustrated dark-academia study with a bookcase, writing desk, piano, and cabinet of curiosities."
         />
         {
-          comingSoonHotspots.map(({ id, label, tooltip = "Coming soon" }) => (
-            <button
-              class:list={["hotspot", "status-hotspot", `${id}-hotspot`]}
-              type="button"
-              aria-label={`${label}, coming soon`}
-              aria-expanded="false"
-            >
-              <span class="hotspot-marker" aria-hidden="true"></span>
-              <span class="hotspot-tooltip" role="tooltip">{tooltip}</span>
-            </button>
-          ))
+          roomHotspots.map(({ id, label, tooltip = "Coming soon", href, x, y, width, height }) =>
+            href ? (
+              <a
+                class:list={["hotspot", `${id}-hotspot`]}
+                href={href}
+                aria-label={label}
+                style={`--spot-x: ${x}%; --spot-y: ${y}%; --spot-width: ${width}%; --spot-height: ${height}%;`}
+              >
+                <span class="hotspot-marker" aria-hidden="true"></span>
+                <span class="hotspot-tooltip" role="tooltip">{tooltip}</span>
+              </a>
+            ) : (
+              <button
+                class:list={["hotspot", "status-hotspot", `${id}-hotspot`]}
+                type="button"
+                aria-label={`${label}, coming soon`}
+                aria-expanded="false"
+                style={`--spot-x: ${x}%; --spot-y: ${y}%; --spot-width: ${width}%; --spot-height: ${height}%;`}
+              >
+                <span class="hotspot-marker" aria-hidden="true"></span>
+                <span class="hotspot-tooltip" role="tooltip">{tooltip}</span>
+              </button>
+            ),
+          )
         }
       </div>
 
@@ -256,119 +271,21 @@ const comingSoonHotspots = [
     background: transparent;
     border: 0;
     cursor: pointer;
+    display: block;
+    height: var(--spot-height);
+    left: var(--spot-x);
     padding: 0;
     position: absolute;
+    top: var(--spot-y);
+    transform: translate(-50%, -50%);
+    width: var(--spot-width);
     z-index: 1;
   }
 
-  .reading-hotspot {
-    --marker-x: 51%;
-    --marker-y: 52%;
-    height: 58%;
-    left: 59.5%;
-    top: 6%;
-    width: 16.7%;
-  }
-
-  .globe-hotspot {
-    --marker-x: 47%;
-    --marker-y: 46%;
-    height: 18%;
-    left: 46%;
-    top: 39%;
-    width: 10%;
-  }
-
-  .piano-hotspot {
-    --marker-x: 45%;
-    --marker-y: 57%;
-    height: 32%;
-    left: 26%;
-    top: 27%;
-    width: 18%;
-  }
-
-  .crochet-hotspot {
-    --marker-x: 22%;
-    --marker-y: 49%;
-    height: 16%;
-    left: 15%;
-    top: 73%;
-    width: 13%;
-  }
-
-  .laptop-hotspot {
-    --marker-x: 45%;
-    --marker-y: 47%;
-    height: 15%;
-    left: 62%;
-    top: 55%;
-    width: 11%;
-    z-index: 2;
-  }
-
-  .typewriter-hotspot {
-    --marker-x: 47%;
-    --marker-y: 64%;
-    height: 18%;
-    left: 44%;
-    top: 49%;
-    width: 12%;
-  }
-
-  .journal-hotspot {
-    --marker-x: 48%;
-    --marker-y: 49%;
-    height: 12%;
-    left: var(--marker-x, 52%);
-    top: 61%;
-    width: 10%;
-  }
-
-  .mirror-hotspot {
-    --marker-x: 37%;
-    --marker-y: 54%;
-    height: 51%;
-    left: 3%;
-    top: 29%;
-    width: 9%;
-  }
-
-  .plant-hotspot {
-    --marker-x: 40%;
-    --marker-y: 55%;
-    height: 24%;
-    left: 10%;
-    top: 34%;
-    width: 10%;
-  }
-
-  .television-hotspot {
-    --marker-x: 50%;
-    --marker-y: 57%;
-    height: 19%;
-    left: 86%;
-    top: 37%;
-    width: 13%;
-  }
-
+  .camera-hotspot,
+  .laptop-hotspot,
   .telephone-hotspot {
-    --marker-x: 48%;
-    --marker-y: 67%;
-    height: 15%;
-    left: 71%;
-    top: 58%;
-    width: 12%;
     z-index: 2;
-  }
-
-  .paintings-hotspot {
-    --marker-x: 49%;
-    --marker-y: 55%;
-    height: 17%;
-    left: 30%;
-    top: 16%;
-    width: 13%;
   }
 
   .hotspot::before {
@@ -387,9 +304,9 @@ const comingSoonHotspots = [
     border-radius: 50%;
     box-shadow: 0 0 0 5px rgba(215, 170, 86, 0.13), 0 0 16px rgba(231, 181, 77, 0.82);
     height: 0.7rem;
-    left: 52%;
+    left: 50%;
     position: absolute;
-    top: var(--marker-y, 47%);
+    top: 50%;
     transform: translate(-50%, -50%);
     transition: box-shadow 180ms ease, transform 180ms ease;
     width: 0.7rem;
@@ -411,13 +328,13 @@ const comingSoonHotspots = [
     font-size: 1.5rem;
     font-style: italic;
     font-weight: 600;
-    left: var(--marker-x, 52%);
+    left: 50%;
     line-height: 1;
     opacity: 0;
     padding: 0.62rem 0.95rem 0.68rem;
     pointer-events: none;
     position: absolute;
-    top: var(--marker-y, 47%);
+    top: 50%;
     transform: translate(-50%, calc(-100% - 1rem)) translateY(0.3rem);
     transition: opacity 180ms ease, transform 180ms ease;
     white-space: nowrap;
@@ -472,13 +389,6 @@ const comingSoonHotspots = [
 
     h1 {
       font-size: 3.4rem;
-    }
-
-    .reading-hotspot {
-      height: 63%;
-      left: 59%;
-      top: 4%;
-      width: 18%;
     }
 
     .hotspot-tooltip {

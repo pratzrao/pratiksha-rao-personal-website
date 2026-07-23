@@ -1,0 +1,249 @@
+---
+const roomImage = "/images/pratikshas-room-concept-v1.png";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="description"
+      content="Pratiksha Rao's reading shelf: books, notes, and things worth returning to."
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,600&display=swap"
+      rel="stylesheet"
+    />
+    <title>Reading | Pratiksha's Room</title>
+  </head>
+  <body>
+    <main class="reading-page">
+      <nav aria-label="Room navigation">
+        <a href="/">Back to room</a>
+      </nav>
+
+      <header class="page-header">
+        <p class="eyebrow">The bookshelf</p>
+        <h1>Reading</h1>
+        <p class="lede">Books I am carrying, returning to, and writing beside.</p>
+      </header>
+
+      <figure class="shelf-detail" aria-hidden="true">
+        <img src={roomImage} alt="" />
+      </figure>
+
+      <section class="catalogue" aria-labelledby="catalogue-title">
+        <div class="catalogue-heading">
+          <p class="eyebrow">A first shelf</p>
+          <h2 id="catalogue-title">The index is being arranged.</h2>
+        </div>
+
+        <ol class="shelves">
+          <li>
+            <span>01</span>
+            <div>
+              <h3>Current shelf</h3>
+              <p>The books that are open beside the bed, desk, or both.</p>
+            </div>
+          </li>
+          <li>
+            <span>02</span>
+            <div>
+              <h3>Notes in the margins</h3>
+              <p>Small observations, passages worth keeping, and unfinished thoughts.</p>
+            </div>
+          </li>
+          <li>
+            <span>03</span>
+            <div>
+              <h3>Books to return to</h3>
+              <p>A growing record of books that have stayed in the room.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+    </main>
+  </body>
+</html>
+
+<style>
+  :global(*) {
+    box-sizing: border-box;
+  }
+
+  :global(html) {
+    background: #100e0d;
+    color: #efe1ca;
+    font-family: "Cormorant Garamond", Garamond, Georgia, serif;
+  }
+
+  :global(body) {
+    margin: 0;
+  }
+
+  .reading-page {
+    margin: 0 auto;
+    max-width: 78rem;
+    padding: 1.5rem clamp(1.25rem, 5vw, 4.5rem) 5rem;
+  }
+
+  nav {
+    font-size: 1.05rem;
+    padding: 0.4rem 0 4rem;
+  }
+
+  nav a {
+    border-bottom: 1px solid rgba(231, 197, 128, 0.45);
+    color: #ddbd81;
+    text-decoration: none;
+  }
+
+  nav a:hover,
+  nav a:focus-visible {
+    color: #fff0d3;
+  }
+
+  .page-header {
+    max-width: 42rem;
+  }
+
+  .eyebrow {
+    color: #c99f61;
+    font-size: 1.05rem;
+    font-style: italic;
+    margin: 0 0 0.55rem;
+  }
+
+  h1,
+  h2,
+  h3,
+  p {
+    margin-top: 0;
+  }
+
+  h1 {
+    font-size: 5.5rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 0.8;
+    margin-bottom: 1.5rem;
+  }
+
+  .lede {
+    color: #d2c0a6;
+    font-size: 1.55rem;
+    line-height: 1.35;
+    margin-bottom: 3rem;
+    max-width: 30rem;
+  }
+
+  .shelf-detail {
+    border-bottom: 1px solid rgba(225, 190, 123, 0.36);
+    border-top: 1px solid rgba(225, 190, 123, 0.36);
+    height: min(33rem, 47svh);
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .shelf-detail img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    object-position: 68% 24%;
+    opacity: 0.76;
+    width: 100%;
+  }
+
+  .catalogue {
+    display: grid;
+    gap: 3rem;
+    grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
+    padding-top: 4.5rem;
+  }
+
+  .catalogue-heading h2 {
+    font-size: 2.2rem;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 0;
+  }
+
+  .shelves {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .shelves li {
+    border-top: 1px solid rgba(225, 190, 123, 0.3);
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: 2.75rem minmax(0, 1fr);
+    padding: 1.5rem 0 1.65rem;
+  }
+
+  .shelves li:last-child {
+    border-bottom: 1px solid rgba(225, 190, 123, 0.3);
+  }
+
+  .shelves span {
+    color: #bd955d;
+    font-size: 1rem;
+    padding-top: 0.28rem;
+  }
+
+  .shelves h3 {
+    font-size: 2rem;
+    font-weight: 600;
+    line-height: 0.9;
+    margin-bottom: 0.5rem;
+  }
+
+  .shelves p {
+    color: #cbb99e;
+    font-size: 1.22rem;
+    line-height: 1.35;
+    margin-bottom: 0;
+    max-width: 34rem;
+  }
+
+  @media (max-width: 700px) {
+    .reading-page {
+      padding-top: 1.25rem;
+    }
+
+    nav {
+      padding-bottom: 3.2rem;
+    }
+
+    h1 {
+      font-size: 4rem;
+    }
+
+    .lede {
+      font-size: 1.35rem;
+    }
+
+    .shelf-detail {
+      height: 16rem;
+    }
+
+    .catalogue {
+      grid-template-columns: 1fr;
+      padding-top: 3.5rem;
+    }
+  }
+
+  @media (max-width: 420px) {
+    h1 {
+      font-size: 3.4rem;
+    }
+
+    .shelves h3 {
+      font-size: 1.75rem;
+    }
+  }
+</style>
